@@ -5,7 +5,7 @@
 
 **3cY-S3C** is a highly interactive, browser-based Cyber Security Operations Center (SOC) dashboard. It visualizes global cyber threats, monitors live CVE feeds, performs real-time OSINT (Open-Source Intelligence) queries, and provides a hacker-movie aesthetic with its dark cyberpunk UI.
 
-![3cY-S3C Dashboard Interface](https://raw.githubusercontent.com/emrecaglaryildiz/sec-center/main/screenshot.png) *(Add a screenshot here)*
+3cY-S3C Dashboard Interface
 
 <img width="2557" height="1318" alt="image" src="https://github.com/user-attachments/assets/bd990150-d06b-4e58-bfbe-89cb5b0c1758" />
 
