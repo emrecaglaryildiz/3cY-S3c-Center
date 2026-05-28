@@ -7,6 +7,9 @@
 
 ![3cY-S3C Dashboard Interface](https://raw.githubusercontent.com/emrecaglaryildiz/sec-center/main/screenshot.png) *(Add a screenshot here)*
 
+<img width="2557" height="1318" alt="image" src="https://github.com/user-attachments/assets/bd990150-d06b-4e58-bfbe-89cb5b0c1758" />
+
+
 ## 🚀 Features
 
 - **Interactive Threat Map (2D & 3D):** Visualizes live and simulated cyber attacks happening around the globe. Switch between a 3D WebGL Globe and a high-performance 2D Canvas Map.
