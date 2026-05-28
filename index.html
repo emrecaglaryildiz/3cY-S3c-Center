@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3cY-S3C | Küresel Siber Tehdit İstihbaratı</title>
+  <meta name="description"
+    content="3cY-S3C is a real-time Security Operations Center dashboard providing global cyber threat intelligence, CVE monitoring, live attack mapping, MITRE ATT&CK tracking, and malicious URL feeds.">
+  <meta name="theme-color" content="#0a0e1a">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Dashboard Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/modal.css">
+
+  <!-- D3.js -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+
+  <div class="dashboard">
+
+    <!-- ========================================
+         HEADER
+         ======================================== -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <!-- Shield Icon SVG -->
+          <svg class="logo-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="shield-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00f0ff" />
+                <stop offset="100%" stop-color="#00ff88" />
+              </linearGradient>
+            </defs>
+            <path d="M10 1L2 4.5V9.5C2 14.2 5.4 18.4 10 19.5C14.6 18.4 18 14.2 18 9.5V4.5L10 1Z"
+              stroke="url(#shield-grad)" stroke-width="1.5" fill="none" />
+            <path d="M10 5V11" stroke="url(#shield-grad)" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="10" cy="13.5" r="1" fill="url(#shield-grad)" />
+          </svg>
+          <span class="logo-text">3cY-S3C</span>
+        </div>
+        <span class="header-subtitle" data-i18n="subtitle">Küresel Siber Tehdit İstihbaratı</span>
+      </div>
+
+      <div class="header-center">
+        <div class="status-group">
+          <div class="defcon-indicator" id="defcon-indicator">
+            <span class="defcon-dot"></span>
+            <span class="defcon-text">ALARM 5</span>
+          </div>
+          <span class="status-item" data-i18n="nav_threat_feeds">
+            <span class="status-dot online"></span>TEHDİT AKIŞLARI
+          </span>
+          <span class="status-item" data-i18n="nav_cve_monitor">
+            <span class="status-dot online"></span>CVE MONİTÖRÜ
+          </span>
+          <span class="status-item" data-i18n="nav_attack_map">
+            <span class="status-dot online"></span>SALDIRI HARİTASI
+          </span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Hunt Mode Search -->
+        <div class="hunt-search-container">
+          <span class="hunt-search-icon" id="hunt-search-btn" style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; transition: background 0.2s;">🔍</span>
+          <input type="text" id="hunt-search-input" class="hunt-search-input" placeholder="IP, Domain, Hash Ara..." autocomplete="off" spellcheck="false">
+        </div>
+        
+        <div class="lang-toggle" id="lang-toggle" style="cursor:pointer; margin-right: 20px; font-weight: bold; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--accent-cyan); display: flex; align-items: center; justify-content: center; width: 40px; transition: 0.3s;">
+          TR
+        </div>
+        <div class="header-clock">
+          <span id="clock">00:00:00</span>
+          <span id="clock-date">2024-01-01</span>
+        </div>
+        <div class="header-update">
+          <span class="update-label" data-i18n="last_update">SON GÜNCELLEME</span>
+          <span id="last-update">--:--:--</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========================================
+         LEFT PANEL
+         ======================================== -->
+    <aside class="panel-left">
+      <!-- Stat Cards -->
+      <div class="stat-cards">
+        <div class="stat-card cyan">
+          <div class="stat-value" id="attack-count">0</div>
+          <div class="stat-label" data-i18n="stat_active_attacks">Aktif Saldırılar</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-value" id="threat-count">0</div>
+          <div class="stat-label" data-i18n="stat_threats">Tehditler</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-value" id="ioc-count">0</div>
+          <div class="stat-label" data-i18n="stat_iocs">IOC'ler</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-value" id="cve-count">0</div>
+          <div class="stat-label" data-i18n="stat_cves_today">Bugünkü CVE'ler</div>
+        </div>
+      </div>
+
+    <!-- Live Threat Feed -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="threat-feed">
+          <span data-i18n="header_live_threat">🔴 Canlı Tehdit Akışı</span>
+          <div>
+            <span class="section-badge" id="threat-feed-badge">0</span>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="threat-feed-list"></div>
+      </div>
+
+      <!-- Data Breaches -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="breach-feed">
+          <span data-i18n="header_breaches">🚨 Veri Sızıntıları Radar</span>
+          <div>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="breach-feed-list"></div>
+      </div>
+
+      <!-- Live Terminal (Hacker Feed) -->
+      <div class="panel-section flex-grow" style="flex: 1.5;">
+        <div class="section-header clickable" data-modal-target="terminal-feed">
+          <span data-i18n="header_raw_console">>_ RAW_INTERCEPT_CONSOLE</span>
+          <div>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="live-terminal scroll-y" id="live-terminal">
+          <div class="terminal-line system" id="term-init-text" data-i18n="term_init">Güvenli sızma matrisi başlatılıyor...</div>
+          <div class="terminal-line system" id="term-wait-text" data-i18n="term_wait">Canlı veri bekleniyor...</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ========================================
+         CENTER PANEL — WORLD MAP
+         ======================================== -->
+    <main class="panel-center">
+      <!-- HACKER NEWS TICKER (OVER MAP) -->
+      <div class="news-ticker-container">
+        <div class="news-ticker-label">LIVE INTEL</div>
+        <div class="news-ticker-wrap">
+          <div class="news-ticker" id="hacker-news-ticker">
+            <span class="ticker-item">Hacker News beslemesi bekleniyor...</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="globe-container" style="display: none;"></div>
+      <canvas id="globe-canvas-2d" style="display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></canvas>
+
+      <!-- Map Overlay Stats -->
+      <div class="map-overlay">
+        <div class="map-stat glass">
+          <div class="map-stat-value" id="map-attacks-per-sec">0</div>
+          <div class="map-stat-label" data-i18n="map_attacks_per_sec">Saldırı/sn</div>
+        </div>
+        <div class="map-stat glass">
+          <div class="map-stat-value" id="map-countries-targeted">0</div>
+          <div class="map-stat-label" data-i18n="map_targeted_countries">Hedeflenen Ülkeler</div>
+        </div>
+        <div class="map-stat glass">
+          <div class="map-stat-value" id="map-total-attacks">0</div>
+          <div class="map-stat-label" data-i18n="map_total_attacks">Toplam Saldırı (24s)</div>
+        </div>
+        <div class="map-stat glass" id="toggle-map-mode-btn" style="cursor: pointer; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--accent-green);">
+          <div class="map-stat-value" id="map-mode-status" style="color: var(--accent-green);">2D Canvas</div>
+          <div class="map-stat-label" data-i18n="map_mode">Harita Modu</div>
+        </div>
+        <div class="map-stat glass" id="toggle-rotation-btn" style="display: none; cursor: pointer; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--accent-cyan);">
+          <div class="map-stat-value" id="rotation-status" style="color: var(--accent-cyan);">AÇIK</div>
+          <div class="map-stat-label" data-i18n="map_auto_rotate">Oto. Dönüş</div>
+        </div>
+      </div>
+
+      <!-- Attack Type Legend -->
+      <div class="map-legend glass" id="map-legend">
+        <span class="legend-item" data-i18n="legend_malware"><span class="legend-dot" style="background:#ff3366"></span>Zararlı Yazılım</span>
+        <span class="legend-item" data-i18n="legend_phishing"><span class="legend-dot" style="background:#ff8800"></span>Oltalama</span>
+        <span class="legend-item" data-i18n="legend_botnet"><span class="legend-dot" style="background:#a855f7"></span>C2/Botnet</span>
+        <span class="legend-item" data-i18n="legend_ddos"><span class="legend-dot" style="background:#00f0ff"></span>DDoS</span>
+        <span class="legend-item" data-i18n="legend_exploit"><span class="legend-dot" style="background:#3b82f6"></span>İstismar (Exploit)</span>
+      </div>
+    </main>
+
+    <!-- ========================================
+         RIGHT PANEL
+         ======================================== -->
+    <aside class="panel-right">
+      <!-- Graph Button -->
+      <div class="panel-section" style="flex: 0 0 auto; border-bottom: 1px solid rgba(0,240,255,0.08);">
+        <button class="osint-btn purple" style="margin-bottom: 0; width: 100%; justify-content: flex-start; text-align: left;" data-modal-target="node-graph-feed">
+          <span class="osint-icon">🕸️</span>
+          <div>
+            İstihbarat Ağı (Node Graph)
+            <span class="osint-desc" style="display:block; font-size:10px; color:var(--text-muted); margin-top:2px;">Gelişmiş APT & Malware Bağlantıları</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Country Ranking -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="country-ranking-feed">
+          <span data-i18n="header_top_countries">🌍 En Çok Saldırıya Uğrayan Ülkeler</span>
+          <div>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div id="country-ranking" class="flex-grow scroll-y"></div>
+      </div>
+
+      <!-- Botnet C&C Servers -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="botnet-feed">
+          <span data-i18n="header_botnet_cc">🤖 Botnet C&amp;C Sunucuları</span>
+          <div>
+            <span class="section-badge" id="botnet-badge">0</span>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="botnet-list"></div>
+      </div>
+
+      <!-- URLhaus Feed (Suspicious Domains) -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="url-feed">
+          <span data-i18n="header_urlhaus">🔗 Şüpheli Domainler</span>
+          <div>
+            <span class="section-badge" id="url-feed-badge">0</span>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="url-feed-list"></div>
+      </div>
+
+      <!-- Ransomware Groups -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="ransomware-feed">
+          <span data-i18n="header_ransomware">🏴‍☠️ Fidye Yazılımı Monitörü</span>
+          <div>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="ransomware-feed-list"></div>
+      </div>
+
+      <!-- YARA Signatures -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="yara-feed">
+          <span data-i18n="header_yara">🛡️ Yeni YARA İmzaları</span>
+          <div>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="yara-feed-list"></div>
+      </div>
+
+      <!-- Targeted Industries -->
+      <div class="panel-section flex-grow">
+        <div class="section-header clickable" data-modal-target="industry-feed">
+          <span data-i18n="header_industry">📉 Hedefteki Sektörler</span>
+          <div>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="industry-feed-list"></div>
+      </div>
+    </aside>
+
+    <!-- ========================================
+         BOTTOM PANEL
+         ======================================== -->
+    <div class="panel-bottom">
+      <div class="bottom-section">
+        <div class="section-header clickable" data-modal-target="cve-feed">
+          <span data-i18n="header_recent_cves">🛡️ Son CVE'ler</span>
+          <div>
+            <span class="section-badge" id="cve-badge">0</span>
+            <span class="expand-icon">↗️</span>
+          </div>
+        </div>
+        <div class="feed-list flex-grow scroll-y" id="cve-list"></div>
+      </div>
+      <div class="bottom-section">
+        <div class="section-header clickable" data-modal-target="attack-categories-feed">
+          <span data-i18n="header_attack_categories">⚔️ Saldırı Kategorileri</span>
+          <div><span class="expand-icon">↗️</span></div>
+        </div>
+        <div class="canvas-container">
+          <canvas id="attack-type-chart"></canvas>
+        </div>
+      </div>
+      <div class="bottom-section">
+        <div class="section-header clickable" data-modal-target="mitre-attack-feed">
+          <span data-i18n="header_mitre">🏴‍☠️ MITRE ATT&amp;CK</span>
+          <div><span class="expand-icon">↗️</span></div>
+        </div>
+        <div id="mitre-matrix" class="mitre-grid"></div>
+      </div>
+      <div class="bottom-section">
+        <div class="section-header"><span data-i18n="header_24h_activity">📈 24 Saatlik Aktivite</span></div>
+        <div class="canvas-container">
+          <canvas id="timeline-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scan Line Effect -->
+  <div class="scan-line"></div>
+
+  <!-- ========================================
+       HUNT OVERLAY
+       ======================================== -->
+  <div class="hunt-overlay" id="hunt-overlay">
+    <div class="hunt-container">
+      <div class="hunt-header">
+        <div class="hunt-title">⚠️ HEDEF SORGULAMA AKTİF</div>
+        <button class="hunt-close" id="hunt-close">&times;</button>
+      </div>
+      <div class="hunt-body" id="hunt-body">
+        <div class="hunt-scanline"></div>
+        <div class="hunt-content" id="hunt-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" id="osint-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">MODAL TITLE</div>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body scroll-y" id="modal-body">
+        <!-- Content injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D & Data Visualization Libraries -->
+  <script src="//unpkg.com/three"></script>
+  <script src="//unpkg.com/globe.gl"></script>
+  <script src="//d3js.org/d3.v7.min.js"></script>
+  <script src="//unpkg.com/topojson-client@3"></script>
+
+  <!-- Dashboard Scripts -->
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/globe.js"></script>
+  <script src="js/globe2d.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/feeds.js"></script>
+  <script src="js/cve.js"></script>
+  <script src="js/threats.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/intel.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/hunt.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/news.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
