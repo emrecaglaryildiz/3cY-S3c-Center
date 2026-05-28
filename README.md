@@ -7,8 +7,10 @@
 
 3cY-S3C Dashboard Interface
 
+Screen shot -1 
 <img width="2557" height="1318" alt="image" src="https://github.com/user-attachments/assets/bd990150-d06b-4e58-bfbe-89cb5b0c1758" />
 
+Screen shot -2
 <img width="2557" height="1318" alt="image" src="https://github.com/user-attachments/assets/ef590ca0-c647-4c65-a848-047218c736cc" />
 
 
